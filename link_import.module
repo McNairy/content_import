@@ -87,6 +87,7 @@ function link_import_form() {
 		'#title' => t('URL(s) to page crawl for links'), 
     '#description' => t('Enter one URL per line must include protocol moniker (ex.: http://, ftp://, smb://, etc.)'),
 		'#required' => TRUE,
+    '#default_value' => t("http://localhost")
 	);
 
 	$content_types = node_type_get_names();
@@ -94,7 +95,8 @@ function link_import_form() {
 	$form['urls']['content_type'] = array(
 	   '#type' => 'select',
 	   '#title' => t('Select Content Type'),
-	   '#options' => $content_types
+	   '#options' => $content_types,
+     '#default_value' => "Song"
 	);
 
   $form['attachments'] = array(
@@ -113,7 +115,8 @@ function link_import_form() {
         t('none'),
         t('all'),
       )
-    )
+    ),
+    '#default_value' => array("all")
   );
 
   $form['attachments']['custom_files'] = array(
@@ -138,6 +141,7 @@ function link_import_form() {
 
   return $form;
  }
+
 /**
 * Validate the form.
 */
@@ -156,6 +160,7 @@ function link_import_form_submit($form, &$form_state) {
   $urls = get_urls($url_list);
   $content_type = $form_state['values']['content_type'];
   $regexp = "<a\s[^>]*href=(\"??)([^\" >]*?)\\1[^>]*>(.*)<\/a>";
+  $bodytext = "";
 
   foreach($urls as $url) {
     $input = @file_get_contents($url) or die("Could not access file: $url");
@@ -175,12 +180,32 @@ function link_import_form_submit($form, &$form_state) {
         $node->promote  = 0;        //(1 or 0): promoted to front page
         $node->sticky   = 0;        //(1 or 0): sticky at top of lists
         $node->comment  = 1;        //2 = comments on, 1 = comments off
-
+        //TODO: get id of currently logged in user
         $node->uid = 1; // UID of the author of the node; or use $node->name
-        $bodytext = "Bueller?";
+
         $node->body[$node->language][0]['value']   = $bodytext;
         $node->body[$node->language][0]['summary'] = text_summary($bodytext);
         $node->body[$node->language][0]['format']  = 'filtered_html';
+
+        $source_path = $match[2];
+        //TODO: only process files of specific mime-types
+        $valid_mime = array('txt', 'image/jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx');
+
+        foreach ($valid_mime as $mime) 
+        {
+          if(file_get_mimetype($match[2]) == $mime){
+            $image = file_get_contents($source_path);
+            $file = file_save_data($image, 'public://' . drupal_basename($source_path),FILE_EXISTS_REPLACE);
+            $file->display = 1;
+            $file->description = "";
+            $node->field_attachment = array(
+              LANGUAGE_NONE => array(
+                '0' => (array)$file
+              )
+            );
+          } 
+        }
+
 
         // I prefer using pathauto, which would override the below path
         $path = 'node_created_on' . date('YmdHis');
@@ -189,7 +214,7 @@ function link_import_form_submit($form, &$form_state) {
         if($node = node_submit($node)) { // Prepare node for saving
           node_save($node);
           echo "Node with nid " . $node->nid . " saved!\n";
-        }   
+        }
       }
     } 
   }
@@ -204,3 +229,10 @@ function get_urls($url_list){
   return $urls;
 }
 
+function attach_file($source_path, $node) {
+  //TODO: get mime-type and process accordingly
+  $image = file_get_contents($source_path);
+  $file = file_save_data($image, 'public://' . drupal_basename($source_path),FILE_EXISTS_REPLACE);
+  node_object_prepare($node);
+  $node->field_attachment[LANGUAGE_NONE]['0']['fid'] = $file->fid;
+};
