@@ -85,7 +85,7 @@ function link_import_form() {
 	$form['urls']['url_list'] = array(
 		'#type' => 'textarea', 
 		'#title' => t('URL(s) to page crawl for links'), 
-    '#description' => t('Enter one URL per line.'),
+    '#description' => t('Enter one URL per line must include protocol moniker (ex.: http://, ftp://, smb://, etc.)'),
 		'#required' => TRUE,
 	);
 
@@ -142,48 +142,65 @@ function link_import_form() {
 * Validate the form.
 */
 function link_import_form_validate($form, &$form_state) {
+  /*
   $url = $form_state['values']['url_list'];
   if(filter_var($url, FILTER_VALIDATE_URL) == FALSE)
   {
     form_set_error('url', t("Invalid URL " . $form_state['values']['url_list']));
   }
+  */
 }
 
 function link_import_form_submit($form, &$form_state) {
-  $url = $form_state['values']['url_list'];
-  $input = @file_get_contents($url) or die("Could not access file: $url");
-  $regexp = "<a\s[^>]*href=(\"??)([^\" >]*?)\\1[^>]*>(.*)<\/a>";
+  $url_list = $form_state['values']['url_list'];
+  $urls = get_urls($url_list);
   $content_type = $form_state['values']['content_type'];
+  $regexp = "<a\s[^>]*href=(\"??)([^\" >]*?)\\1[^>]*>(.*)<\/a>";
 
-  if(preg_match_all("/$regexp/siU", $input, $matches, PREG_SET_ORDER)) {
-    foreach($matches as $match) {
-      //echo "Path: $match[2] <br/>";
-      //echo "Text: $match[3] <br/>";
-      
-      $node = new stdClass(); // Create a new node object
-      $node->type = $content_type; // Or page, or whatever content type you like
-      node_object_prepare($node); // Set some default values
-      $node->title    = strip_tags($match[3]);
-      $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
-      $node->status   = 1;      //(1 or 0): published or not
-      $node->promote  = 0;        //(1 or 0): promoted to front page
-      $node->sticky   = 0;        //(1 or 0): sticky at top of lists
-      $node->comment  = 1;        //2 = comments on, 1 = comments off
+  foreach($urls as $url) {
+    $input = @file_get_contents($url) or die("Could not access file: $url");
+    
 
-      $node->uid = 1; // UID of the author of the node; or use $node->name
-      $bodytext = "Bueller?";
-      $node->body[$node->language][0]['value']   = $bodytext;
-      $node->body[$node->language][0]['summary'] = text_summary($bodytext);
-      $node->body[$node->language][0]['format']  = 'filtered_html';
+    if(preg_match_all("/$regexp/siU", $input, $matches, PREG_SET_ORDER)) {
+      foreach($matches as $match) {
+        //echo "Path: $match[2] <br/>";
+        //echo "Text: $match[3] <br/>";
+        
+        $node = new stdClass(); // Create a new node object
+        $node->type = $content_type; // Or page, or whatever content type you like
+        node_object_prepare($node); // Set some default values
+        $node->title    = strip_tags($match[3]);
+        $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+        $node->status   = 1;      //(1 or 0): published or not
+        $node->promote  = 0;        //(1 or 0): promoted to front page
+        $node->sticky   = 0;        //(1 or 0): sticky at top of lists
+        $node->comment  = 1;        //2 = comments on, 1 = comments off
 
-      // I prefer using pathauto, which would override the below path
-      $path = 'node_created_on' . date('YmdHis');
-      $node->path = array('alias' => $path);
+        $node->uid = 1; // UID of the author of the node; or use $node->name
+        $bodytext = "Bueller?";
+        $node->body[$node->language][0]['value']   = $bodytext;
+        $node->body[$node->language][0]['summary'] = text_summary($bodytext);
+        $node->body[$node->language][0]['format']  = 'filtered_html';
 
-      if($node = node_submit($node)) { // Prepare node for saving
-        node_save($node);
-        echo "Node with nid " . $node->nid . " saved!\n";
-      }   
-    }
-  } 
+        // I prefer using pathauto, which would override the below path
+        $path = 'node_created_on' . date('YmdHis');
+        $node->path = array('alias' => $path);
+
+        if($node = node_submit($node)) { // Prepare node for saving
+          node_save($node);
+          echo "Node with nid " . $node->nid . " saved!\n";
+        }   
+      }
+    } 
+  }
 }
+
+/**
+ * Parse a list of URLs submitted via a textarea and put them into an array
+ */
+function get_urls($url_list){
+  //put list of links in textarea into an array
+  $urls = preg_split("/[\r\n,]+/", $url_list);
+  return $urls;
+}
+
