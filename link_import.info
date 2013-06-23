@@ -1,0 +1,8 @@
+name = Link Import
+description = Import links to nodes.
+core = 7.x 
+package = McNairy
+files[]		   = link_import.module
+dependencies[] = token
+dependencies[] = pathauto
+configure = admin/config/content/link_import
