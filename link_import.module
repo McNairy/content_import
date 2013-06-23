@@ -77,7 +77,7 @@ function link_import_form() {
   $form['urls'] = array(
     "#type" => 'fieldset',
     "#title" => t('URLs'),
-    '#weight' => 4, 
+    '#weight' => 40, 
     '#collapsible' => TRUE, 
     '#collapsed' => FALSE,
   );
@@ -87,6 +87,7 @@ function link_import_form() {
 		'#title' => t('URL(s) to page crawl for links'), 
     '#description' => t('Enter one URL per line must include protocol moniker (ex.: http://, ftp://, smb://, etc.)'),
 		'#required' => TRUE,
+    '#default_value' => t("http://localhost")
 	);
 
 	$content_types = node_type_get_names();
@@ -94,15 +95,16 @@ function link_import_form() {
 	$form['urls']['content_type'] = array(
 	   '#type' => 'select',
 	   '#title' => t('Select Content Type'),
-	   '#options' => $content_types
+	   '#options' => $content_types,
+     '#default_value' => "Song"
 	);
 
   $form['attachments'] = array(
     "#type" => 'fieldset',
     "#title" => t('Attachments'),
-    '#weight' => 5, 
+    '#weight' => 50, 
     '#collapsible' => TRUE, 
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
   );
 
   $form['attachments']['get_file'] = array(
@@ -113,40 +115,65 @@ function link_import_form() {
         t('none'),
         t('all'),
       )
-    )
+    ),
+    '#default_value' => array("all")
   );
 
+  //TODO
   $form['attachments']['custom_files'] = array(
     '#type' => 'textfield',
     '#title' => t('Enter file extension types to be downloaded separated by commas'),
     '#description' => t('example: jpg, pdf, tiff')
   );
 
+  $form['attachments']['html_body'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Add content of HTML files to node body.',
+    '#description' => t('Instead of downloading the file its contents will be added to node body.')
+  );
+
+  $form['options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Options'),
+    '#weight' => 60,
+    '#collapsible' => TRUE, 
+    '#collapsed' => TRUE
+  );
+
+  //TODO
+  $form['options']['div'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Look for div(s) and put into separate node(s)'),
+    '#options' => array('header', 'footer', 'nav')
+  );
+
 	$form['submit'] = array(
 		'#type' => 'submit',
 		'#value' => t('Submit'),
-    '#weight' => 10
+    '#weight' => 100
 	);
 
 	return $form;
 }
- function link_import_config_form() {
+
+function link_import_config_form()
+{
   $form['undo'] = array(
     '#type' => 'checkbox',
     '#title' => t('Keep log of import batches to be able to undo them.')
   );
 
   return $form;
- }
+}
+
 /**
 * Validate the form.
 */
 function link_import_form_validate($form, &$form_state) {
   /*
-  $url = $form_state['values']['url_list'];
-  if(filter_var($url, FILTER_VALIDATE_URL) == FALSE)
+  if(foo)
   {
-    form_set_error('url', t("Invalid URL " . $form_state['values']['url_list']));
+    form_set_error($bar, t('message'));
   }
   */
 }
@@ -156,6 +183,7 @@ function link_import_form_submit($form, &$form_state) {
   $urls = get_urls($url_list);
   $content_type = $form_state['values']['content_type'];
   $regexp = "<a\s[^>]*href=(\"??)([^\" >]*?)\\1[^>]*>(.*)<\/a>";
+  $bodytext = "";
 
   foreach($urls as $url) {
     $input = @file_get_contents($url) or die("Could not access file: $url");
@@ -163,8 +191,8 @@ function link_import_form_submit($form, &$form_state) {
 
     if(preg_match_all("/$regexp/siU", $input, $matches, PREG_SET_ORDER)) {
       foreach($matches as $match) {
-        //echo "Path: $match[2] <br/>";
-        //echo "Text: $match[3] <br/>";
+        //Path: $match[2]
+        //Text: $match[3]
         
         $node = new stdClass(); // Create a new node object
         $node->type = $content_type; // Or page, or whatever content type you like
@@ -172,15 +200,48 @@ function link_import_form_submit($form, &$form_state) {
         $node->title    = strip_tags($match[3]);
         $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
         $node->status   = 1;      //(1 or 0): published or not
-        $node->promote  = 0;        //(1 or 0): promoted to front page
-        $node->sticky   = 0;        //(1 or 0): sticky at top of lists
-        $node->comment  = 1;        //2 = comments on, 1 = comments off
+        $node->promote  = 0;      //(1 or 0): promoted to front page
+        $node->sticky   = 0;      //(1 or 0): sticky at top of lists
+        $node->comment  = 1;      //2 = comments on, 1 = comments off
 
+        //TODO: get id of currently logged in user
         $node->uid = 1; // UID of the author of the node; or use $node->name
-        $bodytext = "Bueller?";
-        $node->body[$node->language][0]['value']   = $bodytext;
+
+        //Add content of HTML files to node body if checked
+        if($form_state['values']['html_body'] == 1) {
+          $node->body[$node->language][0]['value']   = $input;
+        } else {
+          $node->body[$node->language][0]['value']   = "";
+        }
+
+        
+
         $node->body[$node->language][0]['summary'] = text_summary($bodytext);
         $node->body[$node->language][0]['format']  = 'filtered_html';
+
+        /**
+         * Download, save, and attach file to node
+         */
+        $source_path = $match[2]; //href from crawled page
+
+        //TODO: only process files of specific mime-types - the Drupal way, not this abortion here.
+        $valid_mime = array('txt', 'image/jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx');
+
+        foreach ($valid_mime as $mime) 
+        {
+          if(file_get_mimetype($match[2]) == $mime){
+            $image = file_get_contents($source_path);
+            $file = file_save_data($image, 'public://' . drupal_basename($source_path),FILE_EXISTS_REPLACE);
+            $file->display = 1;
+            //TODO: get ALT text for file
+            $file->description = "";
+            $node->field_attachment = array(
+              LANGUAGE_NONE => array(
+                '0' => (array)$file
+              )
+            );
+          } 
+        }
 
         // I prefer using pathauto, which would override the below path
         $path = 'node_created_on' . date('YmdHis');
@@ -189,7 +250,7 @@ function link_import_form_submit($form, &$form_state) {
         if($node = node_submit($node)) { // Prepare node for saving
           node_save($node);
           echo "Node with nid " . $node->nid . " saved!\n";
-        }   
+        }
       }
     } 
   }
@@ -203,4 +264,3 @@ function get_urls($url_list){
   $urls = preg_split("/[\r\n,]+/", $url_list);
   return $urls;
 }
-
