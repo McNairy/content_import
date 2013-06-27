@@ -1,0 +1,29 @@
+<?php
+
+ $schema['link_import_log'] = array(
+    'description' => 'Store import batch IDs for undo',
+    'fields' => array(
+      'lid' => array(
+        'description' => 'link import id',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'batch_num' => array(
+        'description' => 'batch number',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'node id',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'batch_name' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('lid'),
+  );
