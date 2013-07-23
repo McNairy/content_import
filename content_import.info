@@ -1,0 +1,9 @@
+name = Content Import
+description = Import content from an existing site and create nodes.
+core = 7.x 
+package = McNairy
+files[]		   = content_import.module
+files[]		   = content_import.install
+dependencies[] = token
+dependencies[] = pathauto
+configure = admin/config/content/content_import
