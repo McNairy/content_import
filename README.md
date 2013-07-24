@@ -9,7 +9,6 @@ Process URL(s) and create node(s) and add the content of the body tag for that p
 
 Assign content type to the node
 
-Import mime types from URL and save as media and as file to the content type
 
 
 TODO:
@@ -30,5 +29,7 @@ add option to modify attribute of nodes in batch (content type, owner, etc.)
 add option to modfy attributes of batch (name, date, etc.)
 
 Make whole non-body tags invisible when body checkbox is checked
+
+Import mime types from URL and save as media and as file to the content type
 
 
