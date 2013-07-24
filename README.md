@@ -3,6 +3,13 @@ content_import
 
 Drupal Module to rip site content and insert it into node.
 
+Current Features:
+
+Process URL(s) and create node(s) and add the content of the body tag for that page to the newly created node.
+
+Assign content type to the node
+
+
 TODO:
 
 content_import_form_submit(): get id of currently logged in user and use it during node save
