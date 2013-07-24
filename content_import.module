@@ -110,7 +110,7 @@ function content_import_menu() {
  */
 
 function content_import_form($form, &$form_state) {
-	$batch_name    = time();
+  $batch_name    = time();
 
   $content_types = node_type_get_names();
 
@@ -128,8 +128,6 @@ function content_import_form($form, &$form_state) {
     '#description' => t('Human readable name for batch job. Default is seconds since the Unix Epoch.'),
     '#default_value' => t($batch_name)
   );
-
-
 
 	$form['urls']['url_list'] = array(
 		'#type' => 'textarea', 
@@ -201,13 +199,14 @@ function content_import_form($form, &$form_state) {
 	),
   );
 
+/*
   $form['undo'] = array(
     '#type' => 'fieldset',
     '#title' => 'Undo',
     '#collapsible' => TRUE, 
     '#collapsed' => FALSE
   );
-/*
+
   $form['undo']['batch_name'] = array(
     '#type' => 'select',
     '#title' => t('Select batch(es) to delete'),
@@ -253,6 +252,18 @@ function content_import_form($form, &$form_state) {
 	      )
 	    )
 	);
+/* TODO: Make whole non-body tags invisible when body checkbox is checked
+	$form['html_tags']['non-body_tags']['checkboxes'] = array(
+		'#type' => 'checkboxes',
+		'#options' => drupal_map_assoc(
+			array(
+				t('p'),
+				t('ul'), t('ol'),
+				t('h1'), t('h2'), t('h3'), t('h4'), t('h5'), t('h6')
+			)
+		)
+	);
+*/
 
 	$form['submit'] = array(
 		'#type' => 'submit',
@@ -296,7 +307,7 @@ function content_import_form_submit($form, &$form_state)
 {
   $url_list       = $form_state['values']['url_list'];
   $urls           = get_urls($url_list);
-  $html_tag_list  = $form_state['values']['html_tags']['non-body_tags']['div'];
+  $html_tag_list  = $form_state['values']['div'];
   $content_type   = $form_state['values']['content_type'];
   $bodytext       = "Body Text Goes Here";
   $batch_name     = $form_state['values']['batch_name'];
@@ -314,7 +325,7 @@ function content_import_form_submit($form, &$form_state)
     $node->sticky   = 0;					//(1 or 0): sticky at top of lists
     $node->comment  = 1;					//2 = comments on, 1 = comments off
     //TODO: get id of currently logged in user
-    $node->uid 		= 1; 						// UID of the author of the node; or use $node->name
+    $node->uid 		= $GLOBALS['user']->uid; 						// UID of the author of the node; or use $node->name
 
     if($form_state['values']['body'] 	   == TRUE) { $bodytext = get_element($url, "body"); }
     $node->body[$node->language][0]['value']   = $bodytext;
@@ -335,7 +346,7 @@ function content_import_form_submit($form, &$form_state)
 
     if($node = node_submit($node)) { // Prepare node for saving
       node_save($node);  
-      //add_batch_log($node->nid, $batch_name);                  
+      add_batch_log($node->nid, $batch_name);                  
     }
   }
 }
