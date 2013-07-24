@@ -14,7 +14,6 @@ Import mime types from URL and save as media and as file to the content type
 
 TODO:
 
-content_import_form_submit(): get id of currently logged in user and use it during node save
 
 get_url(): check for empty array and return message
 
