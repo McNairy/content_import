@@ -9,6 +9,8 @@ Process URL(s) and create node(s) and add the content of the body tag for that p
 
 Assign content type to the node
 
+Import mime types from URL and save as media and as file to the content type
+
 
 TODO:
 
