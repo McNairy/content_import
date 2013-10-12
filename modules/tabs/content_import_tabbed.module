@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * A module that imports content from sites and creates nodes out of them.
+ */
+
+/**
+ * Implements hook_block().
+ * 
+ * We want to define a quicktabs block.
+ */
+function content_import_tabbed_block() {
+  $tabs = array(
+   $tabs[] = array(
+      'title'   => t('Tab one'),
+      'type'    => 'node',
+      'nid'     => '24',
+      'weight'  => 0,
+    ),
+    $tabs[] = array(
+      'title'   => t('Tab two'),
+      'type'    => 'node',
+      'nid'     => '23',
+      'weight'  => 1,
+    ),
+);
+
+// Configure the QuickTabs options
+$quicktabs_options = array(
+   'style'   => 'Bullets',
+   'ajax'    => FALSE,
+);
+
+$quicktabs_name = 'dynamic_quicktabs_menu';
+$quicktabs = quicktabs_build_quicktabs($quicktabs_name, $quicktabs_options, $tabs);
+return $quicktabs;
+}

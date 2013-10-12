@@ -7,4 +7,5 @@ files[]		   = content_import.module
 files[]		   = content_import.install
 dependencies[] = token
 dependencies[] = pathauto
+dependencies[] =  multiselect
 configure = admin/config/content/content_import
