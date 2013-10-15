@@ -225,9 +225,15 @@ function content_import_form($form, &$form_state) {
   );
 
   $form['html_tags']['non-body_tags']['div'] = array(
-    '#type' => 'textarea',
-    '#title' => 'Div ID(s)',
-    '#description' => t('This will get all content enclosed in the &lt;div&gt;&lt;/div&gt; tags with the specified id(s). Enter one id per line')   
+    '#type' => 'textfield',
+    '#title' => 'Div class or id',
+    '#description' => t('Example: div[id=foo], div[class=bar]. Only one item.')   
+  );
+
+  $form['html_tags']['non-body_tags']['div-depth'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Div depth'),
+    '#description' => t('Depth to which to decend into the DOM, starting at 0')
   );
 /*
   $form['html_tags']['non-body_tags']['tags'] = array(
@@ -237,10 +243,12 @@ function content_import_form($form, &$form_state) {
     '#default_value' => ''
   );
 */
+/*
   $form['html_tags']['non-body_tags']['checkboxes'] = array(
     '#type' => 'checkboxes',
     '#options' => drupal_map_assoc(get_html_tags())
   );
+  */
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -322,14 +330,9 @@ function content_import_form_submit($form, &$form_state)
         $bodytext = strip_attributes($bodytext);
       }
     } else {
-      //get selections from $form_state['values']['html_tags']['non-body_tags']['tags'];
-      /*
-      foreach($form_state['values']['tags'] as $t)
-      {
-        $bodytext .= get_element($url, $t);
-      }
-      */
-      $bodytext = print_r($form_state['values']['html_tags']['non-body_tags']['checkboxes']);
+      $element  = $form_state['values']['div'];
+      $depth    = $form_state['values']['div-depth'];
+      $bodytext = get_element($url, $element, $depth);
     }
 
     $node->body[$node->language][0]['value']   = $bodytext;
@@ -578,7 +581,7 @@ function strip_attributes ($html) {
  * @param strip_attributes
  *  Strip HTML tag attributes
  */
-function get_element($file, $element)
+function get_element($file, $element, $depth = 0)
 {
   //get specified element from crawled page
   libraries_load('simple_html_dom');
@@ -587,7 +590,7 @@ function get_element($file, $element)
   $html->load_file($file);
 
   //get first element in array of found elements
-  $e = $html->find($element, 0);
+  $e = $html->find($element, $depth);
 
   switch($element)
   {
