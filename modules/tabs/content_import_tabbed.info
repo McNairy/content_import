@@ -1,0 +1,11 @@
+name = Content Import Tabbed
+description = Import content from an existing site and create nodes.
+core = 7.x 
+package = McNairy
+files[]		   = content_import_tabs.info
+files[]		   = content_import_tabs.module
+files[]		   = content_import_tabs.install
+dependencies[] = token
+dependencies[] = pathauto
+dependencies[] = quicktabs
+configure = admin/config/content/content_import_tabbed

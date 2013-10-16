@@ -5,45 +5,35 @@
  * A module that imports content from sites and creates nodes out of them.
  */
 
- 
-
 /**
  * Implements hook_library_info()
  */
 function content_import_libraries_info() {
-	// A very simple library. No changing APIs (hence, no versions), no variants.
-    // Expected to be extracted into 'sites/all/libraries/simple_html_dom'.
-    $libraries['simple_html_dom'] = array(
-      'name' => 'Simple HTML Dom',
-      'vendor url' => 'http://simplehtmldom.sourceforge.net/',
-      'download url' => 'http://sourceforge.net/projects/simplehtmldom/files/simple_html_dom.php',
-      'files' => array(
-        'php' => array('simple_html_dom.php'),
-      ),
-      'version' => '1.5',
-   );
+  //Expected to be extracted into 'sites/all/libraries/simple_html_dom'.
+  $libraries['simple_html_dom'] = array(
+    'name' => 'Simple HTML Dom',
+    'vendor url' => 'http://simplehtmldom.sourceforge.net/',
+    'download url' => 'http://sourceforge.net/projects/simplehtmldom/files/simple_html_dom.php',
+    'files' => array(
+      'php' => array('simple_html_dom.php'),
+    ),
+    'version' => '1.5',
+ );
 
-    return $libraries;
+  //Expected to be extracted into 'sites/all/libraries/strip_attributes'.
+  $libraries['strip_attributes'] = array(
+    'name' => 'Strip Attributes',
+    'vendor url' => 'http://semlabs.co.uk',
+    'download url' => 'http://semlabs.co.uk/assets/files/strip_attributes.zip',
+    'files' => array(
+      'php' => array('StripAttributes.php'),
+    ),
+    'version' => '0.2.1',
+ );
+
+  return $libraries;
 }
 
-/**
- * Load libraries
- */
-/*
-// Try to load the library and check if that worked.
-if (($library = libraries_load('simple_html_dom')) && !empty($library['loaded'])) {
- 	// Do something with the library here.
- 	// This doesn't seem to do anything
-	// $html = new simple_html_dom();
-} else {
-	// Something went wrong. :(
-	// This contains a short status code of what went wrong, such as 'not found'.
-	$error = $library['error'];
-	// This contains a detailed (localized) error message.
-	$error_message = $library['error message'];
-	print_r($error_message);
-}
-*/
 /**
  * Implements hook_help.
  *
@@ -98,7 +88,7 @@ function content_import_menu() {
     'page arguments' => array('content_import_form'),
     //'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
-  );  
+  );
 
   return $items;
 }
@@ -110,8 +100,7 @@ function content_import_menu() {
  */
 
 function content_import_form($form, &$form_state) {
-	$batch_name    = time();
-
+  $batch_name    = time();
   $content_types = node_type_get_names();
 
   $form['urls'] = array(
@@ -129,23 +118,21 @@ function content_import_form($form, &$form_state) {
     '#default_value' => t($batch_name)
   );
 
-
-
-	$form['urls']['url_list'] = array(
-		'#type' => 'textarea', 
-		'#title' => t('URL(s) to page crawl for links'), 
+  $form['urls']['url_list'] = array(
+    '#type' => 'textarea', 
+    '#title' => t('URL(s) to page crawl for links'), 
     '#description' => t('Enter one URL per line must include protocol moniker (ex.: http://, ftp://, smb://, etc.)'),
-		'#required' => TRUE,
+    '#required' => TRUE,
     '#default_value' => t("http://localhost/index.html")
-	);
+  );
 
 
-	$form['urls']['content_type'] = array(
-	   '#type' => 'select',
-	   '#title' => t('Select Content Type'),
-	   '#options' => $content_types,
+  $form['urls']['content_type'] = array(
+     '#type' => 'select',
+     '#title' => t('Select Content Type'),
+     '#options' => $content_types,
      '#default_value' => "page"
-	);
+  );
 
   $form['urls']['taxonomy_list'] = array(
     '#type' => 'select',
@@ -177,6 +164,7 @@ function content_import_form($form, &$form_state) {
   $form['attachments']['get_file'] = array(
     '#type' => 'radios',
     '#title' => t('Get Attachments'),
+    '#description' => t('Download images, documents, audio files, etcetera.'),
     '#options' => drupal_map_assoc(
       array(
         t('none'),
@@ -192,14 +180,110 @@ function content_import_form($form, &$form_state) {
     '#title' => t('Enter file extension types to be downloaded separated by commas'),
     '#description' => t('example: jpg, pdf, tiff'),
     '#states' => array(
-		'invisible' => array(
-		 ':input[name="get_file"]' => array('value' => 'none', 'value' => 'all'),
-		),
-		'visible' => array(
-		':input[name="get_file"]' => array('value' => 'some')
-		),
-	),
+    'invisible' => array(
+     ':input[name="get_file"]' => array('value' => 'none', 'value' => 'all'),
+    ),
+    'visible' => array(
+    ':input[name="get_file"]' => array('value' => 'some')
+    ),
+  ),
   );
+
+  $form['html_tags'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'HTML Tags',
+    '#collapsible'  => TRUE,
+    '#collapsed'  => FALSE
+  );
+
+  $form['html_tags']['title'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Title',
+    '#description' => t('Select element to be used for title of node, the default is the &lt;title&gt; tag.'),
+    '#default_value' => t('title')
+  );
+
+  $form['html_tags']['body'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'body',
+    '#description' => t('This will get all content between &lt;body&gt;&lt;/body&gt; tags. Uncheck this box to specify indivdual tags.'),
+      '#default_value' => 1  
+  );
+
+  $form['html_tags']['remove-inline-styles'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Remove inline styles."),
+    '#default_value' => 1
+  );
+
+  $form['html_tags']['non-body_tags'] = array(
+    '#type' => 'fieldset',
+    '#title' => t(''),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="body"]' => array('checked' => FALSE)
+      ),
+      'invisible' => array(
+         ':input[name="body"]' => array('checked' => TRUE)
+      )
+    )
+  );
+
+  $form['html_tags']['non-body_tags']['div'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Div Class or ID name',
+    '#description' => t('Div class or id to pull from content.')   
+  );
+
+  $form['html_tags']['non-body_tags']['div-radios'] = array(
+    '#type' => 'radios',
+    '#options' => drupal_map_assoc(
+      array(
+        t('ID'),
+        t('Class')
+      )
+    ),
+  );
+
+  $form['html_tags']['non-body_tags']['div-depth'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Div depth'),
+    '#description' => t('Depth to which to decend into the DOM, starting at 0'),
+    '#default_value' => '1'
+  );
+
+  $form['html_tags']['non-body_tags']['remove'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Remove div from imported content?'),
+    '#description' => t('Strips the specified tag from the imported content.')
+  );
+/*
+  $form['html_tags']['non-body_tags']['tags'] = array(
+    '#type' => 'multiselect',
+    '#title' => 'HTML tags',
+    '#options' => get_html_tags(),
+    '#default_value' => ''
+  );
+*/
+/*
+  $form['html_tags']['non-body_tags']['checkboxes'] = array(
+    '#type' => 'checkboxes',
+    '#options' => drupal_map_assoc(get_html_tags())
+  );
+  */
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#weight' => 10
+  );
+
+  return $form;
+}
+
+ function content_import_config_form() {
 
   $form['undo'] = array(
     '#type' => 'fieldset',
@@ -207,7 +291,7 @@ function content_import_form($form, &$form_state) {
     '#collapsible' => TRUE, 
     '#collapsed' => FALSE
   );
-/*
+
   $form['undo']['batch_name'] = array(
     '#type' => 'select',
     '#title' => t('Select batch(es) to delete'),
@@ -218,61 +302,6 @@ function content_import_form($form, &$form_state) {
   $form['undo']['submit_undo'] = array(
     '#type' => 'submit',
     '#value' => t('Submit')
-    //TODO: process multiple submit buttons on same page
-  );
-*/
-
-	$form['html_tags'] = array(
-		'#type' => 'fieldset',
-		'#title' => 'HTML Tags',
-		'#collapsible'	=> TRUE,
-		'#collapsed'	=> FALSE
-	);
-
-	$form['html_tags']['body'] = array(
-		'#type' => 'checkbox',
-		'#title' => 'body',
-		'#description' => t('This will get all content between &lt;body&gt;&lt;/body&gt; tags. Uncheck this box to specify indivdual tags.'),
-    	'#default_value' => 1  
-	);
-
-	$form['html_tags']['non-body_tags']  = array(
-		'#type' => 'div'
-	);
-
-	$form['html_tags']['non-body_tags']['div'] = array(
-		'#type' => 'textarea',
-		'#title' => 'Div ID(s)',
-		'#description' => t('This will get all content enclosed in the &lt;div&gt;&lt;/div&gt; tags with the specified id(s). Enter one id per line'),
-		'#states' => array(
-	      'visible' => array(
-	        ':input[name="body"]' => array('checked' => FALSE)
-	      ),
-	      'invisible' => array(
-	      	 ':input[name="body"]' => array('checked' => TRUE)
-	      )
-	    )
-	);
-
-	$form['submit'] = array(
-		'#type' => 'submit',
-		'#value' => t('Submit'),
-    '#weight' => 10
-	);
-
-	return $form;
-}
-
- function content_import_config_form() {
-  $form['content_import_undo'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Keep log of import batches to be able to undo them.')
-  );
-
-  $form['batch_name_required'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Require batch name?'),
-    '#description' => t('Overrides setting on main page')
   );
 
   return $form;
@@ -296,37 +325,61 @@ function content_import_form_submit($form, &$form_state)
 {
   $url_list       = $form_state['values']['url_list'];
   $urls           = get_urls($url_list);
-  $html_tag_list  = $form_state['values']['html_tags']['non-body_tags']['div'];
+  //$html_tag_list  = $form_state['values']['tags'];
   $content_type   = $form_state['values']['content_type'];
-  $bodytext       = "Body Text Goes Here";
   $batch_name     = $form_state['values']['batch_name'];
-  $title          = "Title Goes Here";
+  $title          = $form_state['values']['title'];
+  $inline_style   = $form_state['values']['remove-inline-styles'];
+  $type           = $form_state['values']['div-radios'];
 
   foreach($urls as $url) {
-    $input 			= @file_get_contents($url) or die("Could not access file: $url");
-    $node 			= new stdClass();		// Create a new node object
-    $node->type 	= $content_type;		// Or page, or whatever content type you like
-    node_object_prepare($node);				// Set some default values
-    $node->title    = strip_tags(get_element($url, "title"));
-    $node->language = LANGUAGE_NONE;		// Or e.g. 'en' if locale is enabled
-    $node->status   = 1;					//(1 or 0): published or not
-    $node->promote  = 0;					//(1 or 0): promoted to front page
-    $node->sticky   = 0;					//(1 or 0): sticky at top of lists
-    $node->comment  = 1;					//2 = comments on, 1 = comments off
-    //TODO: get id of currently logged in user
-    $node->uid 		= 1; 						// UID of the author of the node; or use $node->name
+    $input      = @file_get_contents($url) or die("Could not access file: $url");
+    $node       = new stdClass();   // Create a new node object
+    $node->type   = $content_type;    // Or page, or whatever content type you like
+    node_object_prepare($node);       // Set some default values
+    
+    //get title
+    libraries_load('simple_html_dom');
+    $html = new simple_html_dom();
+    $html->load_file($url);
+    $node->title = strip_tags($html->find($title, 0));
 
-    if($form_state['values']['body'] 	   == TRUE) { $bodytext = get_element($url, "body"); }
+    $node->language = LANGUAGE_NONE;    // Or e.g. 'en' if locale is enabled
+    $node->status   = 1;          //(1 or 0): published or not
+    $node->promote  = 0;          //(1 or 0): promoted to front page
+    $node->sticky   = 0;          //(1 or 0): sticky at top of lists
+    $node->comment  = 1;          //2 = comments on, 1 = comments off
+    $node->uid    = $GLOBALS['user']->uid; // UID of the author of the node as currently logged in user
+
+    //get whole body of target page or specified HTML tags from target page as bodytext
+    if($form_state['values']['body'] == TRUE) 
+    {
+      $bodytext = get_element($url, "body");
+
+      if($inline_style == true)
+      {
+        $bodytext = strip_attributes($bodytext);
+      }
+    } else {
+      $element  = $form_state['values']['div'];
+      $depth    = $form_state['values']['div-depth'];
+
+      if($form_state['values']['remove'] == 1)
+      {
+        $bodytext = get_element($url, $element, $depth, $type);
+      } else {
+        $bodytext = get_element($url, $element, $depth, $type);
+      }
+    }
+
     $node->body[$node->language][0]['value']   = $bodytext;
     $node->body[$node->language][0]['summary'] = text_summary($bodytext);
     $node->body[$node->language][0]['format']  = 'full_html';
 
-/*
-    attach_file($path, $node, 
+    attach_file($url, $node, 
       $form_state['values']['get_file'],
       array($form_state['values']['custom_files'])
     );
-*/
 
     //pathauto will override the below path
     //pathauto mysteriously stopped overriding this, so removing it
@@ -335,7 +388,7 @@ function content_import_form_submit($form, &$form_state)
 
     if($node = node_submit($node)) { // Prepare node for saving
       node_save($node);  
-      //add_batch_log($node->nid, $batch_name);                  
+      add_batch_log($node->nid, $batch_name);                  
     }
   }
 }
@@ -539,56 +592,70 @@ function check_mime_type($urls, $types)
   }
 }
 
-function get_element($file, $element)
-{
- 	//get specified element from crawled page
- 	libraries_load('simple_html_dom');
- 	$html = new simple_html_dom();
-	$html->load_file($file);
-	//get first element in array of found elements
-	$e = $html->find($element, 0);
+/**
+ * @param file 
+ *  URL to html file
+ */
+function strip_attributes ($html) {
+  libraries_load('strip_attributes');
 
-	switch($element)
-	{
-		case 'body':
-			$e = str_replace('<body>', '', $e);
-			$e = str_replace('</body>', '', $e);
-			return $e;
-		break;
-		default:
-			return $e;
-	}
-}
-
-/*
-function content_import_schema()
-{
-  $schema['content_import_log'] = array(
-    'description' => 'Store import batch IDs for undo',
-    'fields' => array(
-      'lid' => array(
-        'description' => 'link import id',
-        'type' => 'serial',
-        'not null' => TRUE,
-      ),
-      'nid' => array(
-        'description' => 'node id',
-        'type' => 'int',
-        'not null' => TRUE,
-      ),
-      'batch_name' => array(
-        'description' => 'batch name',
-        'type' => 'varchar',
-        'length' => '50',
-        'not null' => TRUE,
-      ),
-    ),
-    'primary key' => array(
-    	'lid',
-    	'description' => 'log id',
-    ),
+  $sa = new StripAttributes();
+  $sa->allow = array( 'id', 'class' );
+  $sa->exceptions = array( 
+    'img' => array( 'src', 'alt' ),
+    'a' => array( 'href', 'title' )
   );
+  $sa->ignore = array();
 
-  return $schema;
+  return $sa->strip($html);
 }
-*/
+
+/**
+ * @param file 
+ *  URL to html file
+ * @param element
+ *  Array of html tags to retrieve
+ * @param strip_attributes
+ *  Strip HTML tag attributes
+ */
+function get_element($file, $element, $depth = 0, $type)
+{
+  //get specified element from crawled page
+  libraries_load('simple_html_dom');
+
+  $html = new simple_html_dom();
+  $html->load_file($file);
+
+  //get first element in array of found elements
+  $e = $html->find("div[$type=$element]", $depth);
+
+  switch($element)
+  {
+    case 'body':
+      $e = str_replace('<body>', '', $e);
+      $e = str_replace('</body>', '', $e);
+      return $e;
+    break;
+    default:
+      return $e;
+  }
+}
+
+function get_html_tags()
+{
+  $list = array();
+  $vocabs = taxonomy_get_vocabularies();
+  foreach($vocabs as $v)
+  {
+    if($v->machine_name == "html_tags")
+    {
+      $tree = taxonomy_get_tree($v->vid);
+      foreach($tree as $t)
+      {
+        $list[] = $t->name;
+      }
+    }
+  }
+
+  return $list;
+}

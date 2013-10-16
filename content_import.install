@@ -23,10 +23,7 @@ function content_import_schema() {
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array(
-      'lid',
-      'description' => 'log id'
-    ),
+    'primary key' => array('lid')
   );
 
  return $schema;
