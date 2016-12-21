@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
 content_import
 ==============
 
@@ -34,19 +31,3 @@ add option to modfy attributes of batch (name, date, etc.)
 Make whole non-body tags invisible when body checkbox is checked
 
 Import mime types from URL and save as media and as file to the content type
-
-
-=======
->>>>>>> 508e0217e16e1bf1364182ff5c56399433c34bae
-link_import
-===========
-Link Import is a working title, since it was with that original purpose in mind that I started writing the module.
-
-In a nutshell, link_import is a Drupal module for importing content from a non-Drupal site into a Drupal site. Instead of copying pages, links, and files by hand, just give the tools a list of URLs, set some options such as importing file types, copying the HTML body of a page into the body of a new node, setting the content type and taxonomy for that node,
-etctera.
-
-There may be others out there, but this was something I needed and gave me motivation to learn Drupal module development.
-<<<<<<< HEAD
-=======
->>>>>>> master
->>>>>>> 508e0217e16e1bf1364182ff5c56399433c34bae
