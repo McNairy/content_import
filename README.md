@@ -1,7 +1,3 @@
-
-content_import
-==============
-
 Drupal Module to rip site content and insert it into node.
 
 Current Features:

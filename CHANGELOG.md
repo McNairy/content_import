@@ -1,4 +1,4 @@
-**Unreleased**
+**[0.1.0] - 2017-01-30**
 
 **Added**
  - Added ability to specify a div or class to use for title instead of the <title> element @mmcnairy
