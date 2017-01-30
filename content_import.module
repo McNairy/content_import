@@ -8,6 +8,9 @@
 module_load_include('inc', 'simple_html_dom', 'classes');
 module_load_include('inc', 'strip_attributes', 'classes');
 module_load_include('inc', 'BuildMenu', 'classes');
+module_load_include('inc', 'HtmlTags', 'classes');
+
+
 
 /**
  * Implements hook_library_info()
@@ -84,6 +87,16 @@ function content_import_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  $items['admin/config/content/content_import/rules'] = array(
+    'title' => 'Content Import Rewrite Rules',
+    'description' => 'Rewrite rules created by content_import module',
+    'page callback' => 'drupal_get_form',
+    'access callback' => TRUE,
+    'page arguments' => array('content_import_rules_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   $items['content_import'] = array(
     'title' => 'Content Import',
     'description' => 'Set Parameters for Content Importation',
@@ -93,6 +106,8 @@ function content_import_menu() {
     //'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
   );
+
+
 
   return $items;
 }
@@ -138,86 +153,172 @@ function content_import_form($form, &$form_state) {
      '#default_value' => "page"
   );
 
-  $form['urls']['taxonomy_list'] = array(
-    '#type' => 'select',
-    '#title' => 'Select Taxonomy',
-    '#options' => get_taxonomy_vocabularies(),
-    '#ajax' => array(
-      'callback' => 'ajax_terms_callback',
-      'wrapper' => 'term-list-div',
-      'method' => 'replace'
-    )
-  );
+  // $form['urls']['taxonomy_list'] = array(
+  //   '#type' => 'select',
+  //   '#title' => 'Select Taxonomy',
+  //   '#options' => get_taxonomy_vocabularies(),
+  //   '#ajax' => array(
+  //     'callback' => 'ajax_terms_callback',
+  //     'wrapper' => 'term-list-div',
+  //     'method' => 'replace'
+  //   )
+  // );
 
-  $form['urls']['term_list'] = array(
+  // $form['urls']['term_list'] = array(
+  //   '#title' => 'Select Term',
+  //   '#type' => 'select',
+  //   '#prefix' => '<div id="term-list-div">',
+  //   '#suffix' => '</div>',
+  //   '#options' => drupal_map_assoc(array(t('Select')))
+  // );
+
+  $form['urls']['menu_list'] = array(
+    '#title' => 'Select Menu',
+    '#description' => 'General only used to assign a node of Basic content type to a menu',
     '#type' => 'select',
-    '#description' => 'Term list',
-    '#prefix' => '<div id="term-list-div">',
+    '#prefix' => '<div id="menu-list-div">',
     '#suffix' => '</div>',
-    '#options' => drupal_map_assoc(array(t('Select')))
+    '#options' => get_menu_list()
   );
 
-  $form['attachments'] = array(
-    "#type" => 'fieldset',
-    "#title" => t('Attachments'),
-    '#weight' => 5, 
-    '#collapsible' => TRUE, 
-    '#collapsed' => FALSE,
+  $form['urls']['enable_menu'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Enable',
+    '#description' => t('Enable menu when node is created.'),
+    '#default_value' => 0
   );
 
-  $form['attachments']['get_file'] = array(
-    '#type' => 'radios',
-    '#title' => t('Get Attachments'),
-    '#description' => t('Download images, documents, audio files, etcetera.'),
-    '#options' => drupal_map_assoc(
-      array(
-        t('none'),
-        t('all'),
-        t('some (buggy)')
-      )
-    ),
-    '#default_value' => t('none')
-  );
+  // $form['attachments'] = array(
+  //   "#type" => 'fieldset',
+  //   "#title" => t('Attachments'),
+  //   '#weight' => 5, 
+  //   '#collapsible' => TRUE, 
+  //   '#collapsed' => FALSE,
+  // );
 
-  $form['attachments']['custom_files'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Enter file extension types to be downloaded separated by commas'),
-    '#description' => t('example: jpg, pdf, tiff'),
-    '#states' => array(
+  // $form['attachments']['get_file'] = array(
+  //   '#type' => 'radios',
+  //   '#title' => t('Get Attachments'),
+  //   '#description' => t('Download images, documents, audio files, etcetera.'),
+  //   '#options' => drupal_map_assoc(
+  //     array(
+  //       t('none'),
+  //       t('all'),
+  //       t('some (buggy)')
+  //     )
+  //   ),
+  //   '#default_value' => t('none')
+  // );
+
+  // $form['attachments']['custom_files'] = array(
+  //   '#type' => 'textfield',
+  //   '#title' => t('Enter file extension types to be downloaded separated by commas'),
+  //   '#description' => t('example: jpg, pdf, tiff'),
+  //   '#states' => array(
+  //   'invisible' => array(
+  //    ':input[name="get_file"]' => array('value' => 'none', 'value' => 'all'),
+  //   ),
+  //   'visible' => array(
+  //   ':input[name="get_file"]' => array('value' => 'some')
+  //   ),
+  // ),
+  // );
+
+$form['title'] = array(
+  '#type'        => 'fieldset',
+  '#title'       => 'Title',
+  '#collapsible' => TRUE,
+  '#collapsed'   => FALSE
+);
+
+$form['title']['title-options'] = array(
+  '#type' => 'radios',
+  '#title' => '',
+  '#options' => [
+    'default'   => 'Default', 
+    'alt-class' => 'Class', 
+    'alt-div'   => 'Div'
+  ],
+  '#default_value' => 'default'
+);
+
+$form['title']['alt-class'] = array(
+  '#type'        => 'textfield',
+  '#title'       => '',
+  '#description' => 'Class name to use to identity element used for title',
+  '#states' => array(
     'invisible' => array(
-     ':input[name="get_file"]' => array('value' => 'none', 'value' => 'all'),
+      ':input[name="title-options"]' => array('value' => 'default'),
+      ':input[name="title-options"]' => array('value' => 'alt-div')
     ),
     'visible' => array(
-    ':input[name="get_file"]' => array('value' => 'some')
+       ':input[name="title-options"]' => array('value' => 'alt-class')
     ),
+  )
+);
+
+$form['title']['alt-div'] = array(
+  '#type'        => 'textfield',
+  '#title'       => '',
+  '#description' => 'Div id to use to identity element used for title',
+  '#states' => array(
+    'invisible' => array(
+      ':input[name="title-options"]' => array('value' => 'default'),
+      ':input[name="title-options"]' => array('value' => 'alt-class')
+    ),
+    'visible' => array(
+       ':input[name="title-options"]' => array('value' => 'alt-div')
+    ),
+  )
+);
+
+$form['title']['strip-from-title'] = array(
+  '#type' => 'checkbox',
+  '#title' => 'Strip from title',
+  '#description' => 'Strip text from title.',
+  '#default_value' => 0,
+);
+
+$form['title']['strip-title-text'] = array(
+  '#type' => 'textfield',
+  '#description' => 'Enter text to remove from title. This will affect all titles in the current batch.',
+  '#states' => array(
+    'visible' => array(
+        ':input[name="strip-from-title"]' => array('checked' => TRUE)
+      ),
+    'invisible' => array(
+        ':input[name="strip-from-title"]' => array('checked' => FALSE)
+      ),
   ),
-  );
+);
 
-  $form['html_tags'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'HTML Tags',
-    '#collapsible'  => TRUE,
-    '#collapsed'  => FALSE
-  );
+$form['html_tags'] = array(
+  '#type'        => 'fieldset',
+  '#title'       => 'HTML Tags',
+  '#collapsible' => TRUE,
+  '#collapsed'   => FALSE
+);
 
-  $form['html_tags']['body'] = array(
-    '#type' => 'checkbox',
-    '#title' => 'body',
-    '#description' => t('This will get all content between &lt;body&gt;&lt;/body&gt; tags. Uncheck this box to specify indivdual tags.'),
-      '#default_value' => 1  
-  );
+$form['html_tags']['body'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => 'body',
+    '#description'   => t('This will get all content between &lt;body&gt;&lt;/body&gt; tags. Uncheck this box to specify a div.'),
+    '#default_value' => 1,
+    '#weight'        => -10,
+);
 
-  $form['html_tags']['remove-inline-styles'] = array(
-    '#type' => 'checkbox',
-    '#title' => t("Remove inline styles"),
-    '#default_value' => 1
-  );
+$form['html_tags']['remove-inline-styles'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t("Remove inline styles"),
+    '#default_value' => 1,
+    '#weight'        => -8,
+);
 
-  $form['html_tags']['non-body_tags'] = array(
-    '#type' => 'fieldset',
-    '#title' => t(''),
+$form['html_tags']['non-body_tags'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t(''),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed'   => FALSE,
     '#states' => array(
       'visible' => array(
         ':input[name="body"]' => array('checked' => FALSE)
@@ -230,15 +331,22 @@ function content_import_form($form, &$form_state) {
 
   $form['html_tags']['non-body_tags']['div'] = array(
     '#type' => 'textfield',
-    '#title' => 'Div class or id',
-    '#description' => t('Example: div[id=foo], div[class=bar]. Only one item.')   
+    '#title' => 'Div id',
+    '#description' => 'Extract only specified div id(s) (separated by spaces) and add to node body.',
+    '#weight' => -9,
   );
 
-  $form['html_tags']['non-body_tags']['div-depth'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Div depth'),
-    '#description' => t('Depth to which to decend into the DOM, starting at 0')
-  );
+// $form['html_tags']['non-body_tags']['class'] = array(
+//     '#type' => 'textfield',
+//     '#title' => 'Class name',
+//     '#description' => ''
+// );
+
+  // $form['html_tags']['non-body_tags']['div-depth'] = array(
+  //   '#type' => 'textfield',
+  //   '#title' => t('Div depth'),
+  //   '#description' => t('Depth to which to decend into the DOM, starting at 0')
+  // );
 /*
   $form['html_tags']['non-body_tags']['tags'] = array(
     '#type' => 'multiselect',
@@ -258,6 +366,29 @@ function content_import_form($form, &$form_state) {
     '#type' => 'submit',
     '#value' => t('Submit'),
     '#weight' => 10
+  );
+
+  return $form;
+}
+
+function content_import_rules_form() {
+  $form['download_rules'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => 'Download Rewrite Rules',
+    '#collapsible' => TRUE, 
+    '#collapsed'   => FALSE
+    );
+
+  $form['download_rules']['rules'] = array(
+    '#type' => 'select',
+    '#title' => t('Select rule to download'),
+    '#options' => get_rules(),
+    '#description' => t('Select a rewrite to add to source filesystems configuration.')
+  );
+
+  $form['download_rules']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit')
   );
 
   return $form;
@@ -284,8 +415,8 @@ function content_import_form($form, &$form_state) {
     '#value' => t('Submit')
   );
 
-  return $form;
- }
+    return $form;
+}
 
 /**
 * Validate the form.
@@ -301,10 +432,17 @@ function content_import_form_validate($form, &$form_state)
   */
 }
 
+function content_import_rules_form_submit($form, &$form_state) {
+    //download or display selected rewrite
+    print_r($form_sate['values']);
+    // $form['values']['download_rule']['rules'];
+    download_rule();
+}
+
 function content_import_form_submit($form, &$form_state) 
 {
-  // print_r($form_state['values']);
-  // die(__FILE__.":".__LINE__);
+  // echo gettype($form_state['values']['strip-from-title']);
+  // die("<br>".__FILE__.":".__LINE__);
   $url_list       = $form_state['values']['url_list'];
   $urls           = get_urls($url_list);
   //$html_tag_list  = $form_state['values']['tags'];
@@ -314,38 +452,48 @@ function content_import_form_submit($form, &$form_state)
   $inline_style   = $form_state['values']['remove-inline-styles'];
 
   foreach($urls as $url) {
-    $input      = @file_get_contents($url) or die("Could not access file: $url");
-    $node       = new stdClass();   // Create a new node object
-    $node->type   = $content_type;    // Or page, or whatever content type you like
+    $input          = @file_get_contents($url) or die("Could not access file: $url");
+    $node           = new stdClass();   // Create a new node object
+    $node->type     = $content_type;    // Or page, or whatever content type you like
     node_object_prepare($node);       // Set some default values
-    $node->title    = strip_tags(get_element($url, "title"));
+    $title = get_title($url,$form_state['values']);
+
+    if($form_state['values']['strip-from-title'] == 1) {
+      $title = str_replace($form_state['values']['strip-title-text'], '', $title);
+    }
+
+    $node->title    = trim($title);
     $node->language = LANGUAGE_NONE;    // Or e.g. 'en' if locale is enabled
     $node->status   = 1;          //(1 or 0): published or not
     $node->promote  = 0;          //(1 or 0): promoted to front page
     $node->sticky   = 0;          //(1 or 0): sticky at top of lists
     $node->comment  = 1;          //2 = comments on, 1 = comments off
-    $node->uid    = $GLOBALS['user']->uid; // UID of the author of the node as currently logged in user
+    $node->uid      = $GLOBALS['user']->uid; // UID of the author of the node as currently logged in user
 
     //get whole body of target page or specified HTML tags from target page as bodytext
-    if($form_state['values']['body'] == TRUE) 
-    {
+    if($form_state['values']['body'] == TRUE)  {
       $bodytext = get_element($url, "body");
-
-      if($inline_style == true)
-      {
-        $bodytext = strip_attributes($bodytext);
-      }
     } else {
-      $element  = [$form_state['values']['div']];
-      // print_r(gettype($element));
-      // die("<br/>".__FILE__.":".__LINE__);
-      $depth    = $form_state['values']['div-depth'];
-      $bodytext = get_element($url, $element, $depth);
+      $element  = $form_state['values']['div'];
+      $bodytext = get_element($url, $element);
+    }
+
+    if($inline_style) {
+      $html_tags = new HtmlTags();
+      $notAllowedAttributes = $html_tags->getHtmlAttributes();
+      $bodytext = strip_attributes($bodytext, $notAllowedAttributes, []);
     }
 
     $node->body[$node->language][0]['value']   = $bodytext;
     $node->body[$node->language][0]['summary'] = text_summary($bodytext);
     $node->body[$node->language][0]['format']  = 'full_html';
+
+    $node->menu = [
+      'link_title' => $node->title,
+      //'menu_name' => $form_state['values']['menu_list'],
+      'plid' => $form_state['values']['menu_list'],
+      'enabled' => ($form_state['values']['enable_menu']),s
+    ];
 
     attach_file($url, $node, 
       $form_state['values']['get_file'],
@@ -358,8 +506,12 @@ function content_import_form_submit($form, &$form_state)
     //$node->path = array('alias' => $path);
 
     if($node = node_submit($node)) { // Prepare node for saving
-      node_save($node);  
-      add_batch_log($node->nid, $batch_name);                  
+      node_save($node);
+      add_batch_log($node->nid, $batch_name);
+      $alias = "https://www.msha.gov/" . drupal_get_path_alias("node/{$node->nid}");
+      $rule = create_asp_rewrite($node->title, $url, $alias);
+      add_rewrite_to_file($node->title, $rule);
+      drupal_set_message(t('The node was added successfully.'), 'status');
     }
   }
 }
@@ -418,8 +570,10 @@ function get_taxonomy_vocabularies () {
   $vocabularies = array();
   foreach($taxonomies as $t)
   {
+    // array('return_value1' => t('Display Value 1')
     //$vocabularies['name'] = $t->name;
-    $vocabularies[] = $t->vid;
+    // $vocabularies[] = $t->vid;
+    $vocabularies[$t->vid] = $t->name;
   }
 
   return $vocabularies;
@@ -567,18 +721,38 @@ function check_mime_type($urls, $types)
  * @param file 
  *  URL to html file
  */
-function strip_attributes ($html) {
-  libraries_load('strip_attributes');
+// function strip_attributes ($html) {
+//   $sa = new strip_attributes();
+//   $sa->allow = array( 'id', 'class' );
+//   $sa->exceptions = array( 
+//     'img' => array( 'src', 'alt' ),
+//     'a' => array( 'href', 'title' )
+//   );
+//   $sa->ignore = array();
 
+//   return $sa->strip($html);
+// }
+
+function strip_attributes($html, $notAllowedAttributes, $allowedAttributes) {
   $sa = new StripAttributes();
-  $sa->allow = array( 'id', 'class' );
-  $sa->exceptions = array( 
-    'img' => array( 'src', 'alt' ),
-    'a' => array( 'href', 'title' )
-  );
-  $sa->ignore = array();
 
-  return $sa->strip($html);
+  foreach($notAllowedAttributes as $na) {
+      if(in_array($na, $allowedAttributes))
+      {
+          for($i = 0; $i < count($allowedAttributes); $i++)
+          {
+              if($allowedAttributes[$i] == $na)
+              {
+                  unset($allowedAttributes[$i]);
+              } 
+          }
+      }
+  }
+
+  $sa->allow = $allowedAttributes;
+  $output = $sa->strip($html);
+
+  return $output;
 }
 
 /**
@@ -589,25 +763,66 @@ function strip_attributes ($html) {
  * @param strip_attributes
  *  Strip HTML tag attributes
  */
-function get_element($file, $element, $depth = 0)
-{
-  //get specified element from crawled page
+// function get_element($file, $element, $depth = 0)
+// {
+//   //get specified element from crawled page
+//   $html = new simple_html_dom();
+//   $html->load_file($file);
+
+//   //get first element in array of found elements
+//   $e = $html->find("{$element}", $depth);
+
+//   switch($element)
+//   {
+//     case 'body':
+//       $e = str_replace('<body>', '', $e);
+//       $e = str_replace('</body>', '', $e);
+//       return $e;
+//     break;
+//     default:
+//       return $e;
+//   }
+// }
+// 
+function get_title($file, $values) {
+  // print_r($values);
+  // die("<br><span style='color: red'>".__FILE__.":".__LINE__."</span>");
   $html = new simple_html_dom();
   $html->load_file($file);
-
-  //get first element in array of found elements
-  $e = $html->find("{$element}", $depth);
-
-  switch($element)
-  {
-    case 'body':
-      $e = str_replace('<body>', '', $e);
-      $e = str_replace('</body>', '', $e);
-      return $e;
-    break;
-    default:
-      return $e;
+  switch ($values['title-options']) {
+    case 'default':
+        $output = $html->find('title', 0);
+        break;
+    case 'alt-class':
+        $output = $html->find("." . $values['alt-class'], 0);
+        break;
+    case 'alt-div':
+        $output = $html->find("#" . $values['alt-div'], 0);
+        break;
   }
+
+  // if($alt_title) {
+  //   $output = $html->find('title', 0);
+  // } else {
+  //   $output = $html->find('title', 0);
+  // }
+  
+
+  return $output->plaintext;
+}
+
+function get_element($file, $element, $depth = 0) {
+  $element = explode(' ', $element);
+  $output  = '';
+  $html    = new simple_html_dom();
+  $html->load_file($file);
+
+  foreach($element as $div)
+  {
+      $output .= $html->getElementById("{$div}");
+  }
+
+  return $output;
 }
 
 function get_html_tags()
@@ -627,4 +842,36 @@ function get_html_tags()
   }
 
   return $list;
+}
+
+function get_menu_list() {
+  $menu = new BuildMenu();
+  return $menu->get_menu_list();
+}
+
+function create_asp_rewrite($title, $oldUrl, $newUrl) {
+    $old = parse_url($oldUrl);
+    $rule = <<< RULE
+        <rule name="{$title}" patternSyntax="ExactMatch" stopProcessing="true">
+            <match url="{$old['path']}" />
+            <action type="Redirect" url="{$newUrl}" />
+        </rule>
+RULE;
+
+    return $rule;
+}
+
+function add_rewrite_to_file($title, $rule) {
+    $title = preg_replace('@[\ ]+@', '-', $title);
+    $file  = __DIR__ . "/rules/{$title}";
+    file_put_contents($file, $rule, FILE_APPEND);
+}
+
+function get_rules() {
+    $rules = scandir(__DIR__ . "/rules");
+    return $rules;
+}
+
+function download_rule($rule) {
+    return file_get_contents(__DIR__ . '/rules/' . $rules);
 }

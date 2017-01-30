@@ -99,4 +99,15 @@ HTML;
 
         //menu_link_save($item); //not ready, need to learn to set $path variable properly
     }
+
+    public function get_menu_list() {
+        $menus = $this->getMenus();
+        $data = [];
+
+      foreach( $menus as $menu) {
+        $data[$menu['mlid']] = $menu['link_title'];
+      }
+
+      return $data;
+    }
 }

@@ -12,3 +12,4 @@ configure = admin/config/content/content_import
 files[] = classes/simple_html_dom.inc
 files[] = classes/strip_attributes.inc
 files[] = classes/BuildMenu.inc
+files[] = classes/HtmlTags.inc
