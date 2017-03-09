@@ -1,0 +1,5 @@
+<?php
+
+function content_import_uninstall() {
+    drupal_uninstall_schema("content_import");
+}

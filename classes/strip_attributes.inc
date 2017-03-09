@@ -68,6 +68,9 @@ class StripAttributes
 		# Extract attributes
 		foreach( $nodes as &$node )
 		{
+
+			$atts = array();
+
 			preg_match_all( "/([^ =]+)\s*=\s*[\"|']{0,1}([^\"']*)[\"|']{0,1}/i", $node['attributes'], $attributes );
 			if( $attributes[1] )
 			{
