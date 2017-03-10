@@ -243,7 +243,7 @@ $form['html_tags']['body'] = array(
     '#type'          => 'checkbox',
     '#title'         => 'body',
     '#description'   => t('This will get all content between &lt;body&gt;&lt;/body&gt; tags. Uncheck this box to specify a div.'),
-    '#default_value' => 1,
+    '#default_value' => 0,
     '#weight'        => -10,
 );
 
@@ -287,6 +287,7 @@ $form['html_tags']['non-body_tags'] = array(
     '#title'       => 'Div id',
     '#description' => 'Extract only specified div id(s) (separated by spaces) and add to node body.',
     '#weight' => -9,
+    '#default_value' => t('content'),
   );
 
 // $form['html_tags']['non-body_tags']['class'] = array(
@@ -326,7 +327,7 @@ $form['html_tags']['non-body_tags'] = array(
     '#type'          => 'radios',
     '#title'         => 'Create a redirect to use on previous web server',
     '#options'       => drupal_map_assoc(['None', 'Apache', 'IIS']),
-    '#default_value' => 'None',
+    '#default_value' => 'IIS',
   );
 
   $form['submit'] = array(
@@ -344,9 +345,18 @@ $form['html_tags']['non-body_tags'] = array(
   );
 
   $form['date']['extract_date'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Enter PHP regex to find date in content'),
+    '#type'    => 'textfield',
+    '#title'   => t('Enter PHP regex to find date in content'),
+    '#default_value' => '%[a-zA-Z]+\ [0-9]+\, [0-9]+%',
+    '#description' => t('Default format: December 31, 1999'),
   );
+
+  // $form['date']['set_separator'] = array(
+  //   '#type'        => 'select',
+  //   '#title'       => t('Select date separator used in original content'),
+  //   '#options'     => drupal_map_assoc(['Select', '/', '-', '.']),
+  //   '#description' => 'ex: 2015-12-31, 2015/12/31, 2015-12-31, etc.',
+  // );
 
   // $form['date']['format'] = array(
   //   '#type'        => 'select',

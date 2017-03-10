@@ -33,7 +33,7 @@ function get_batch_names()
 
 function get_batch_nids($batch_name)
 {
-  $result = db_query('SELECT nid FROM {content_import_log}', array(':batch_name' => $batch_name));
+  $result = db_query('SELECT nid FROM {content_import_log} WHERE batch_name = :batch_name', array(':batch_name' => $batch_name));
 
   $nids = $result->fetchAllAssoc('nid');
 
